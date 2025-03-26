@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  # Import CORS
 import google.generativeai as genai
 from PIL import Image
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all origins
+CORS(app, supports_credentials=True)  # Enable CORS for all origins
 
 # Configure Google Gemini AI API key
 API_KEY = "AIzaSyBxcJsKgmy5RXZRmzpAPlQzkWfytkINn2c"
@@ -37,5 +37,6 @@ def predict():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=True)
+
 
 
