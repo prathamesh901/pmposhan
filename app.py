@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
@@ -6,7 +5,7 @@ from PIL import Image
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all origins
+CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all origins
 
 # Configure Google Gemini AI API key
 API_KEY = "AIzaSyBxcJsKgmy5RXZRmzpAPlQzkWfytkINn2c"
@@ -31,10 +30,12 @@ def predict():
         # Ensure response is properly formatted as JSON
         food_items = response.text.strip().split("\n")  # Convert response text to a list
 
-        return jsonify({'food_items': food_items})  # Return JSON response
+        return jsonify({'food_items': food_items}), 200  # Return JSON response with status 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500  # Return error in JSON format
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=True)
+
+
