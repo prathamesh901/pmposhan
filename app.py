@@ -24,13 +24,20 @@ def predict():
         image = Image.open(image_file)
 
         # Generate food names based on the image
-        response = model.generate_content(["List only the food names, without any extra text.", image])
-        food_items = [item.strip("* ") for item in response.text.strip().split("\n") if item.strip()]
+        response_food = model.generate_content(["List only the food names without any extra text.", image])
+        food_items = [item.strip("* ") for item in response_food.text.strip().split("\n") if item.strip()]
 
-        return jsonify(food_items)  # Return clean JSON output with only food names
+        # Check food quality as Good or Bad
+        response_quality = model.generate_content(["Assess the food quality in this image and return only 'Good' or 'Bad'.", image])
+        quality = "Good" if "good" in response_quality.text.lower() else "Bad"
+
+        # Return structured JSON output
+        result = {"food_items": food_items, "quality": quality}
+
+        return jsonify(result)  # Return JSON response
 
     except Exception as e:
-        return jsonify([]), 500  # Return empty list on error
+        return jsonify({"error": str(e)}), 500  # Return error if any issue occurs
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000, debug=True)
