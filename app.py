@@ -7,12 +7,12 @@ from PIL import Image
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS
 
-# Configure Google Gemini API key
+# Configure Google Gemini AI API key
 API_KEY = "AIzaSyBxcJsKgmy5RXZRmzpAPlQzkWfytkINn2c"
 genai.configure(api_key=API_KEY)
 
 # Initialize the Gemini model
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -23,30 +23,16 @@ def predict():
         image_file = request.files['image']
         image = Image.open(image_file)
 
-        # Generate food names and calorie values
-        prompt = """
-        Identify the food items in this image and provide their approximate calorie values per 100g.
-        Respond in the following JSON format:
-        {
-            "food_items": [
-                {"name": "apple", "calories_per_100g": 52},
-                {"name": "banana", "calories_per_100g": 89}
-            ]
-        }
-        """
-        response_food = model.generate_content([prompt, image])
-        
-        # Parse response text as JSON
-        food_data = eval(response_food.text)  # Make sure the response is properly formatted
+        # Generate food names based on the image
+        response_food = model.generate_content(["List only the food names without any extra text.", image])
+        food_items = [item.strip("* ") for item in response_food.text.strip().split("\n") if item.strip()]
 
-        # Assess food quality (Good or Bad)
-        response_quality = model.generate_content([
-            "Assess the food quality in this image and return only 'Good' or 'Bad'.", image
-        ])
+        # Check food quality as Good or Bad
+        response_quality = model.generate_content(["Assess the food quality in this image and return only 'Good' or 'Bad'.", image])
         quality = "Good" if "good" in response_quality.text.lower() else "Bad"
 
         # Return structured JSON output
-        result = {"food_items": food_data["food_items"], "quality": quality}
+        result = {"food_items": food_items, "quality": quality}
 
         return jsonify(result)  # Return JSON response
 
