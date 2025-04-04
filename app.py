@@ -2,11 +2,12 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 from PIL import Image
-import json  # Ensure safe JSON handling
+import json
+import re  # Import regex for cleaning AI response
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure Google Gemini AI API key
 API_KEY = "AIzaSyBxcJsKgmy5RXZRmzpAPlQzkWfytkINn2c"  # Replace with your actual API key
@@ -26,24 +27,30 @@ def predict():
 
         # Generate food names and calorie data
         response_food = model.generate_content([
-            "Identify the food items in this image and provide their approximate calorie values per 100g. "
-            "Respond only in JSON format as follows: "
+            "Identify the food items in this image and provide their approximate calorie values per 100g."
+            " Respond strictly in JSON format: "
             '[{"name": "apple", "calories_per_100g": 52}, {"name": "banana", "calories_per_100g": 89}]',
             image
         ])
 
-        # Extract text response & ensure it's valid JSON
+        # Extract response text
         food_response_text = response_food.text.strip()
-        
-        # Attempt to parse as JSON
-        try:
-            food_data = json.loads(food_response_text)
-        except json.JSONDecodeError:
-            return jsonify({"error": "Invalid response from AI"}), 500
+
+        # Use regex to extract only JSON part
+        json_match = re.search(r'\[.*\]', food_response_text, re.DOTALL)
+
+        if json_match:
+            json_data = json_match.group(0)  # Extract matched JSON
+            try:
+                food_data = json.loads(json_data)  # Parse JSON safely
+            except json.JSONDecodeError:
+                return jsonify({"error": "AI returned malformed JSON"}), 500
+        else:
+            return jsonify({"error": "No valid JSON found in AI response"}), 500
 
         # Generate food quality assessment
         response_quality = model.generate_content([
-            "Assess the food quality in this image and return only 'Good' or 'Bad'.",
+            "Assess the food quality in this image. Respond with only 'Good' or 'Bad'.",
             image
         ])
         quality = "Good" if "good" in response_quality.text.lower() else "Bad"
