@@ -23,16 +23,26 @@ def predict():
         image_file = request.files['image']
         image = Image.open(image_file)
 
-        # Generate food names based on the image
-        response_food = model.generate_content(["List only the food names without any extra text.", image])
-        food_items = [item.strip("* ") for item in response_food.text.strip().split("\n") if item.strip()]
+        # Generate food names and calories
+        response_food = model.generate_content([
+            "Identify the food items in this image and provide their approximate calorie values per 100g. "
+            "Format the response as a JSON array: "
+            '[{"name": "apple", "calories_per_100g": 52}, {"name": "banana", "calories_per_100g": 89}]',
+            image
+        ])
+        
+        # Convert response to a valid JSON format
+        food_data = eval(response_food.text)
 
         # Check food quality as Good or Bad
-        response_quality = model.generate_content(["Assess the food quality in this image and return only 'Good' or 'Bad'.", image])
+        response_quality = model.generate_content([
+            "Assess the food quality in this image and return only 'Good' or 'Bad'.",
+            image
+        ])
         quality = "Good" if "good" in response_quality.text.lower() else "Bad"
 
         # Return structured JSON output
-        result = {"food_items": food_items, "quality": quality}
+        result = {"food_items": food_data, "quality": quality}
 
         return jsonify(result)  # Return JSON response
 
