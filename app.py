@@ -27,8 +27,8 @@ def predict():
 
         # Generate food names and calorie data
         response_food = model.generate_content([
-            "Identify the food items in this image and provide their approximate calorie values per 100g."
-            " Respond strictly in JSON format: "
+            "Identify the food items in this image and provide their approximate calorie values per 100g. "
+            "Respond strictly in JSON format: "
             '[{"name": "apple", "calories_per_100g": 52}, {"name": "banana", "calories_per_100g": 89}]',
             image
         ])
@@ -48,6 +48,9 @@ def predict():
         else:
             return jsonify({"error": "No valid JSON found in AI response"}), 500
 
+        # Format: ["name value"]
+        formatted_items = [f"{item['name']} {item['calories_per_100g']}" for item in food_data]
+
         # Generate food quality assessment
         response_quality = model.generate_content([
             "Assess the food quality in this image. Respond with only 'Good' or 'Bad'.",
@@ -55,9 +58,8 @@ def predict():
         ])
         quality = "Good" if "good" in response_quality.text.lower() else "Bad"
 
-        # Return structured JSON output
-        result = {"food_items": food_data, "quality": quality}
-
+        # Return structured output
+        result = {"food_items": formatted_items, "quality": quality}
         return jsonify(result)
 
     except Exception as e:
